@@ -1,0 +1,73 @@
+{
+  "model_name": "HistGradientBoostingRegressor (Point + P10/P90 Quantile Ensemble)",
+  "model_version": "2.0.0-hgb",
+  "data_source": "SIMULATED_DEMO_DATA (seed=42)",
+  "data_disclaimer": "Evaluated on deterministic simulated railway telemetry (seed=42). Does not claim real Indian Railways production performance.",
+  "split_strategy": "Chronological Time-Based Split (70% Train / 15% Validation / 15% Test)",
+  "date_ranges": {
+    "train": "2026-06-01 to 2026-08-02 (3779 runs)",
+    "validation": "2026-08-02 to 2026-08-16 (811 runs)",
+    "test": "2026-08-16 to 2026-08-29 (810 runs)"
+  },
+  "features": [
+    "current_delay",
+    "current_speed",
+    "distance_to_next_station",
+    "distance_to_destination",
+    "historical_section_running_time",
+    "historical_average_delay",
+    "train_encoded",
+    "station_encoded",
+    "route_encoded",
+    "day_of_week",
+    "hour",
+    "weather",
+    "congestion",
+    "previous_station_delay"
+  ],
+  "validation_evaluation": {
+    "split": "validation",
+    "samples": 811,
+    "baseline_formula": "baseline_eta = scheduled_eta + current_delay",
+    "baseline_metrics": {
+      "mae_minutes": 22.062,
+      "rmse_minutes": 38.925,
+      "median_ae_minutes": 9.98,
+      "p90_ae_minutes": 53.75
+    },
+    "ml_model_metrics": {
+      "mae_minutes": 3.268,
+      "rmse_minutes": 5.443,
+      "median_ae_minutes": 2.166,
+      "p90_ae_minutes": 6.761
+    },
+    "improvement_over_baseline": {
+      "mae_reduction_pct": 85.19,
+      "rmse_reduction_pct": 86.02,
+      "mae_saved_minutes": 18.794
+    }
+  },
+  "test_evaluation": {
+    "split": "test",
+    "samples": 810,
+    "baseline_formula": "baseline_eta = scheduled_eta + current_delay",
+    "baseline_metrics": {
+      "mae_minutes": 23.749,
+      "rmse_minutes": 42.001,
+      "median_ae_minutes": 10.205,
+      "p90_ae_minutes": 62.116
+    },
+    "ml_model_metrics": {
+      "mae_minutes": 3.517,
+      "rmse_minutes": 5.705,
+      "median_ae_minutes": 2.239,
+      "p90_ae_minutes": 7.405
+    },
+    "improvement_over_baseline": {
+      "mae_reduction_pct": 85.19,
+      "rmse_reduction_pct": 86.42,
+      "mae_saved_minutes": 20.232
+    }
+  },
+  "trained_at": "2026-09-29T16:59:51.449776Z"
+}

@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: raileta-backend-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python -m app.ml.train_model
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: raileta-postgres
+          property: connectionString
+      - key: CORS_ORIGINS
+        value: http://localhost:5173,https://raileta.vercel.app
+      - key: MODEL_PATH
+        value: app/ml/artifacts/raileta_hgb_model.joblib
+      - key: ENABLE_SIMULATOR
+        value: "true"
+      - key: SEED_DEMO_DATA
+        value: "false"
+      - key: DEMO_USERNAME
+        value: demo
+      - key: DEMO_PASSWORD
+        value: RailETA-Demo-2026
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: RAILWAY_API_URL
+        value: ""
+      - key: RAILWAY_API_KEY
+        value: ""
+
+databases:
+  - name: raileta-postgres
+    databaseName: raileta_db
+    user: raileta_user
+    plan: free
