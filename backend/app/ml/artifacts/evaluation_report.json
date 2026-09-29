@@ -36,15 +36,15 @@
       "p90_ae_minutes": 53.75
     },
     "ml_model_metrics": {
-      "mae_minutes": 3.268,
-      "rmse_minutes": 5.443,
-      "median_ae_minutes": 2.166,
-      "p90_ae_minutes": 6.761
+      "mae_minutes": 3.369,
+      "rmse_minutes": 5.688,
+      "median_ae_minutes": 2.16,
+      "p90_ae_minutes": 6.829
     },
     "improvement_over_baseline": {
-      "mae_reduction_pct": 85.19,
-      "rmse_reduction_pct": 86.02,
-      "mae_saved_minutes": 18.794
+      "mae_reduction_pct": 84.73,
+      "rmse_reduction_pct": 85.39,
+      "mae_saved_minutes": 18.693
     }
   },
   "test_evaluation": {
@@ -58,16 +58,16 @@
       "p90_ae_minutes": 62.116
     },
     "ml_model_metrics": {
-      "mae_minutes": 3.517,
-      "rmse_minutes": 5.705,
-      "median_ae_minutes": 2.239,
-      "p90_ae_minutes": 7.405
+      "mae_minutes": 3.477,
+      "rmse_minutes": 5.753,
+      "median_ae_minutes": 2.17,
+      "p90_ae_minutes": 7.206
     },
     "improvement_over_baseline": {
-      "mae_reduction_pct": 85.19,
-      "rmse_reduction_pct": 86.42,
-      "mae_saved_minutes": 20.232
+      "mae_reduction_pct": 85.36,
+      "rmse_reduction_pct": 86.3,
+      "mae_saved_minutes": 20.272
     }
   },
-  "trained_at": "2026-09-29T16:59:51.449776Z"
+  "trained_at": "2026-09-29T18:30:32.496263Z"
 }

@@ -1,10 +1,12 @@
 """
 Database Configuration for RailETA Backend (FastAPI + PostgreSQL + SQLAlchemy).
 Production uses persistent cloud PostgreSQL via DATABASE_URL environment variable.
-Local development/test environments fall back to SQLite when DATABASE_URL is unset
-or when a local PostgreSQL service is not reachable.
+Local development falls back to SQLite ONLY when DATABASE_URL is not set.
+When DATABASE_URL is configured for PostgreSQL, any connection failure raises a
+clear startup RuntimeError instead of silently falling back to SQLite.
 """
 
+import importlib.util
 import os
 from pathlib import Path
 from sqlalchemy import create_engine, inspect, text
@@ -24,14 +26,49 @@ except ImportError:
                 os.environ.setdefault(k.strip(), v.strip())
 
 DEFAULT_SQLITE_URL = "sqlite:///./raileta_v4.db"
-raw_db_url = os.getenv("DATABASE_URL", DEFAULT_SQLITE_URL).strip()
 
-if raw_db_url.startswith("postgres://"):
-    DATABASE_URL = raw_db_url.replace("postgres://", "postgresql://", 1)
-elif not raw_db_url:
-    DATABASE_URL = DEFAULT_SQLITE_URL
-else:
-    DATABASE_URL = raw_db_url
+
+def _has_module(module_name: str) -> bool:
+    return importlib.util.find_spec(module_name) is not None
+
+
+def normalize_database_url(raw_url: str | None) -> str:
+    """
+    Normalizes DATABASE_URL so the SQLAlchemy dialect+driver matches the installed
+    PostgreSQL driver (`psycopg` v3 or `psycopg2`).
+    Returns DEFAULT_SQLITE_URL only when DATABASE_URL is unset/empty.
+    """
+    cleaned = (raw_url or "").strip()
+    if not cleaned:
+        return DEFAULT_SQLITE_URL
+
+    if cleaned.startswith("sqlite"):
+        return cleaned
+
+    pg_prefixes = (
+        "postgres://",
+        "postgresql://",
+        "postgresql+psycopg://",
+        "postgresql+psycopg2://",
+    )
+    if cleaned.startswith(pg_prefixes):
+        rest = cleaned.split("://", 1)[1]
+        has_psycopg3 = _has_module("psycopg")
+        has_psycopg2 = _has_module("psycopg2")
+
+        if cleaned.startswith("postgresql+psycopg2://") and has_psycopg2:
+            return f"postgresql+psycopg2://{rest}"
+        if has_psycopg3:
+            return f"postgresql+psycopg://{rest}"
+        if has_psycopg2:
+            return f"postgresql+psycopg2://{rest}"
+        return f"postgresql+psycopg://{rest}"
+
+    return cleaned
+
+
+raw_db_url = os.getenv("DATABASE_URL")
+DATABASE_URL = normalize_database_url(raw_db_url)
 
 
 def _build_engine(db_url: str):
@@ -41,27 +78,26 @@ def _build_engine(db_url: str):
             connect_args={"check_same_thread": False},
             pool_pre_ping=True,
         )
+
+    safe_target = db_url.split("@")[-1] if "@" in db_url else db_url
     try:
         eng = create_engine(
             db_url,
             pool_pre_ping=True,
             pool_size=5,
             max_overflow=10,
-            connect_args={"connect_timeout": 5},
+            connect_args={"connect_timeout": 10},
         )
         with eng.connect() as conn:
             conn.execute(text("SELECT 1"))
+        print(f"[RailETA DB] Connected to PostgreSQL ({safe_target}) via {eng.driver}.")
         return eng
     except Exception as exc:
-        print(
-            f"[RailETA DB] Hosted PostgreSQL ({db_url.split('@')[-1]}) unreachable ({exc}); "
-            f"falling back to local SQLite ({DEFAULT_SQLITE_URL})."
-        )
-        return create_engine(
-            DEFAULT_SQLITE_URL,
-            connect_args={"check_same_thread": False},
-            pool_pre_ping=True,
-        )
+        raise RuntimeError(
+            f"[RailETA DB] CRITICAL STARTUP ERROR: Hosted PostgreSQL ({safe_target}) "
+            f"connection failed ({exc}). Refusing to fall back to SQLite because "
+            f"DATABASE_URL is configured for PostgreSQL."
+        ) from exc
 
 
 engine = _build_engine(DATABASE_URL)

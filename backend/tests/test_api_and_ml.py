@@ -643,3 +643,41 @@ def test_12_custom_uploaded_train_corridor_route_and_map_payload(client):
     assert len(r2_data["route"]) == 4
     assert [s["station_code"] for s in r2_data["route"]] == ["S1", "S2", "S3", "S4"]
 
+
+def test_13_postgresql_driver_normalization_and_no_sqlite_fallback():
+    """
+    Verifies:
+    1. SQLite fallback occurs ONLY when DATABASE_URL is unset/empty.
+    2. Render postgres:// and postgresql:// URLs normalize to postgresql+psycopg:// (or installed driver).
+    3. Configured PostgreSQL connection failure raises a clear RuntimeError and NEVER falls back to SQLite.
+    4. Production model artifact (raileta_hgb_model.joblib) loads cleanly with no version mismatch.
+    """
+    import joblib
+    import pytest
+    import sklearn
+    from app.database import DEFAULT_SQLITE_URL, _build_engine, normalize_database_url
+    from app.ml.train_model import DEFAULT_MODEL_PATH
+
+    assert normalize_database_url(None) == DEFAULT_SQLITE_URL
+    assert normalize_database_url("") == DEFAULT_SQLITE_URL
+    assert normalize_database_url("   ") == DEFAULT_SQLITE_URL
+
+    norm_pg1 = normalize_database_url("postgres://user:pass@dpg-example.render.com:5432/raileta_db")
+    norm_pg2 = normalize_database_url("postgresql://user:pass@dpg-example.render.com:5432/raileta_db")
+    assert norm_pg1 in (
+        "postgresql+psycopg://user:pass@dpg-example.render.com:5432/raileta_db",
+        "postgresql+psycopg2://user:pass@dpg-example.render.com:5432/raileta_db",
+    )
+    assert norm_pg1 == norm_pg2
+
+    with pytest.raises(RuntimeError) as exc_info:
+        _build_engine(
+            normalize_database_url("postgresql://raileta_user:secret@127.0.0.1:54329/unreachable_production_db")
+        )
+    assert "Refusing to fall back to SQLite" in str(exc_info.value)
+
+    assert DEFAULT_MODEL_PATH.exists()
+    prod_bundle = joblib.load(DEFAULT_MODEL_PATH)
+    assert prod_bundle.get("sklearn_version") == sklearn.__version__
+
+

@@ -9,8 +9,9 @@ BACKEND_ROOT = Path(__file__).resolve().parent.parent
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-# Disable background infinite loop, use isolated test DB, and ensure clean initial database
+# Disable background infinite loop, use isolated test DB and test model artifact, and ensure clean initial database
 os.environ["DATABASE_URL"] = "sqlite:///./test_raileta.db"
+os.environ["MODEL_PATH"] = "app/ml/artifacts/test_raileta_hgb_model.joblib"
 os.environ["ENABLE_SIMULATOR"] = "false"
 os.environ["SEED_DEMO_DATA"] = "false"
 
@@ -29,6 +30,9 @@ def setup_database_and_ml():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     initialize_system()
+    test_model = BACKEND_ROOT / "app" / "ml" / "artifacts" / "test_raileta_hgb_model.joblib"
+    if test_model.exists():
+        test_model.unlink()
 
 
 @pytest.fixture()
