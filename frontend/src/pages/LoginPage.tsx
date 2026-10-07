@@ -222,6 +222,11 @@ export const LoginPage: React.FC = () => {
                       >
                         {submitting ? 'SIGNING IN...' : 'LOGIN'}
                       </button>
+                      {submitting && (
+                        <p className="text-[11px] text-slate-500 text-center mt-2 animate-pulse">
+                          Connecting to cloud backend (waking up server if idle)...
+                        </p>
+                      )}
                     </div>
                   </form>
 

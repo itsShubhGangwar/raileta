@@ -155,10 +155,18 @@ export function interpolateStopsPosition(
 async function fetchWithTimeout<T>(
   url: string,
   options?: RequestInit,
-  timeoutMs = 8000
+  timeoutMs = 45000
 ): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => {
+    controller.abort(
+      new DOMException(
+        'The request timed out. The backend server on Render may be waking up from sleep.',
+        'TimeoutError'
+      )
+    );
+  }, timeoutMs);
+
   const token = getAuthToken();
   const headers: Record<string, string> = {
     ...(options?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
@@ -193,6 +201,27 @@ async function fetchWithTimeout<T>(
       throw new Error(detail);
     }
     return (await response.json()) as T;
+  } catch (error: unknown) {
+    if (error instanceof UnauthorizedError) {
+      throw error;
+    }
+    const err = error as Error | undefined;
+    if (
+      err?.name === 'AbortError' ||
+      err?.name === 'TimeoutError' ||
+      controller.signal.aborted ||
+      String(err?.message || '').toLowerCase().includes('aborted')
+    ) {
+      throw new Error(
+        'The request timed out. The backend server on Render may be waking up from sleep. Please wait a moment and try again.'
+      );
+    }
+    if (err?.name === 'TypeError' && String(err?.message || '').includes('Failed to fetch')) {
+      throw new Error(
+        'Unable to connect to the backend server. Please verify your internet connection or check if the backend is waking up.'
+      );
+    }
+    throw error;
   } finally {
     clearTimeout(timer);
   }
@@ -207,7 +236,8 @@ export async function loginWithCredentials(
     {
       method: 'POST',
       body: JSON.stringify({ username, password }),
-    }
+    },
+    60000
   );
   setAuthToken(res.access_token);
   return res;
@@ -248,7 +278,7 @@ export async function uploadDatasetCsv(
       method: 'POST',
       body: formData,
     },
-    15000
+    60000
   );
 }
 
@@ -269,7 +299,7 @@ export async function retrainModelFromDb(): Promise<{
     {
       method: 'POST',
     },
-    20000
+    90000
   );
 }
 

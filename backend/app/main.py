@@ -86,12 +86,12 @@ app = FastAPI(
 
 raw_origins = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,https://raileta.vercel.app",
+    "http://localhost:5173,http://127.0.0.1:5173,https://raileta.vercel.app,https://raileta-six.vercel.app",
 )
 allowed_origins = (
     ["*"]
     if raw_origins.strip() == "*"
-    else [o.strip() for o in raw_origins.split(",") if o.strip()]
+    else [o.strip().rstrip("/") for o in raw_origins.split(",") if o.strip()]
 )
 
 app.add_middleware(

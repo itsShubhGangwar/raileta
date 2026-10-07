@@ -4,9 +4,15 @@
  * Derives WebSocket URLs automatically from VITE_WS_URL or VITE_API_URL.
  */
 
-const fallbackUrl = import.meta.env.DEV ? 'http://localhost:8000' : '';
+const PRODUCTION_API_URL = 'https://raileta-backend-objk.onrender.com';
+const PRODUCTION_WS_URL = 'wss://raileta-backend-objk.onrender.com';
+
+const fallbackUrl = import.meta.env.DEV ? 'http://localhost:8000' : PRODUCTION_API_URL;
 const rawApiUrl = (import.meta.env.VITE_API_URL || fallbackUrl).trim();
-const rawWsUrl = (import.meta.env.VITE_WS_URL || '').trim();
+const rawWsUrl = (
+  import.meta.env.VITE_WS_URL ||
+  (import.meta.env.DEV ? '' : PRODUCTION_WS_URL)
+).trim();
 
 export const API_BASE_URL = rawApiUrl.replace(/\/+$/, '');
 

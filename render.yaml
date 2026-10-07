@@ -11,7 +11,7 @@ services:
           name: raileta-postgres
           property: connectionString
       - key: CORS_ORIGINS
-        value: http://localhost:5173,https://raileta.vercel.app
+        value: http://localhost:5173,https://raileta.vercel.app,https://raileta-six.vercel.app
       - key: MODEL_PATH
         value: app/ml/artifacts/raileta_hgb_model.joblib
       - key: ENABLE_SIMULATOR
